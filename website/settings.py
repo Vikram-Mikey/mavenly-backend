@@ -12,21 +12,20 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 
 
-import pymysql
-pymysql.install_as_MySQLdb()
+import os
+from dotenv import load_dotenv
 from pathlib import Path
 from corsheaders.defaults import default_headers
-import os
+import pymysql
+pymysql.install_as_MySQLdb()
+
+# Load .env before any environment variable access
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(str(BASE_DIR / '.env'))
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
-
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-fc#dw6gw7k72$eoft2jf*a7gs)bplbmz@*&5i)cazqfitasu$p')
+# (No placeholder, just continue with the rest of the settings)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
