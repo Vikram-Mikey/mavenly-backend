@@ -154,7 +154,9 @@ CORS_ALLOWED_ORIGINS = [
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = list(default_headers) + [
-    'X-CSRFToken',
+    "content-type",
+    "x-csrftoken",
+    "x-user-email",
 ]
 CORS_EXPOSE_HEADERS = ['Set-Cookie']
 
@@ -192,10 +194,21 @@ SESSION_COOKIE_SECURE = True  # Only send session cookie over HTTPS
 SESSION_COOKIE_HTTPONLY = True  # Prevent JS access to session cookie
 SESSION_COOKIE_SAMESITE = 'Lax'  # Or 'Strict' for more security
 CSRF_COOKIE_SECURE = True
+
 CSRF_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_HTTPONLY = True
-
+CSRF_TRUSTED_ORIGINS = [
+    "https://mavenly-frontend.vercel.app",
+]
 # Custom cookie settings for user_id and user_email (set in views)
 USER_COOKIE_SECURE = True
 USER_COOKIE_SAMESITE = 'Lax'
 USER_COOKIE_HTTPONLY = False  # Set to True if you don't need JS access
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+}
