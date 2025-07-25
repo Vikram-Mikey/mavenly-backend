@@ -204,11 +204,3 @@ CSRF_TRUSTED_ORIGINS = [
 USER_COOKIE_SECURE = True
 USER_COOKIE_SAMESITE = 'Lax'
 USER_COOKIE_HTTPONLY = False  # Set to True if you don't need JS access
-
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ],
-}
