@@ -158,6 +158,15 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
 ]
 CORS_EXPOSE_HEADERS = ['Set-Cookie']
 
+CORS_ALLOW_METHODS = [
+    "GET",
+    "POST",
+    "PUT",
+    "PATCH",
+    "DELETE",
+    "OPTIONS",
+]
+
 # Email backend for development (prints emails to terminal)
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
