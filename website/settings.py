@@ -36,6 +36,7 @@ ALLOWED_HOSTS = [
     '[::1]',
     '*',
     'mavenly-your.com',  # Add your deployed backend domain
+    'mavenly-backend.up.railway.app',
 ]
 
 
