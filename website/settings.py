@@ -25,12 +25,18 @@ load_dotenv(str(BASE_DIR / '.env'))
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-# (No placeholder, just continue with the rest of the settings)
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]', '*']
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '[::1]',
+    '*',
+    'mavenly-your.com',  # Add your deployed backend domain
+]
 
 
 # Application definition
@@ -143,6 +149,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
+    "https://mavenly-frontend.vercel.app",
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = list(default_headers) + [
