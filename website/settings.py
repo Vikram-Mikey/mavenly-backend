@@ -28,7 +28,7 @@ load_dotenv(str(BASE_DIR / '.env'))
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False  # Set to False in production
 
 ALLOWED_HOSTS = [
     'localhost',
@@ -149,7 +149,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
-    "https://mavenly-frontend.vercel.app/",
+    "https://mavenly-frontend.vercel.app",
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = list(default_headers) + [
