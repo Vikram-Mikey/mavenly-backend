@@ -11,6 +11,9 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 
+
+import pymysql
+pymysql.install_as_MySQLdb()
 from pathlib import Path
 from corsheaders.defaults import default_headers
 import os
