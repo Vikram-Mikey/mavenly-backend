@@ -50,7 +50,9 @@ class RemoveProfilePhotoView(APIView):
         user.save()
         return Response({'success': 'Profile photo removed.'})
 
+@method_decorator(csrf_exempt, name='dispatch')
 class SignupView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         serializer = SignupSerializer(data=request.data)
         if serializer.is_valid():
