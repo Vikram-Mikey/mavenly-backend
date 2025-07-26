@@ -81,6 +81,10 @@ def payment_info_view(request):
         'qr_image_url': settings.QR_IMAGE_URL,
     })
 
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+
+@method_decorator(csrf_exempt, name='dispatch')
 class LoginView(APIView):
     def post(self, request):
         identifier = request.data.get('username', '').strip()
