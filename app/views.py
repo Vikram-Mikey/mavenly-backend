@@ -1,9 +1,3 @@
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def check_username_view(request):
-    username = request.GET.get('username', '').strip()
-    exists = User.objects.filter(username=username).exists()
-    return Response({'exists': exists})
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
