@@ -8,6 +8,13 @@ from .views import (
     PublicProfileView,
     SendVerificationCodeView,
     UpdateProfileView,
+    ProgramReviewView,
+    RemoveProfilePhotoView,
+    SignupView,
+    LoginView,
+    ForgotPasswordView,
+    CheckoutEmailView,
+    PaymentConfirmationEmailView,
 )
 
 urlpatterns = [
@@ -19,4 +26,11 @@ urlpatterns = [
     path('public-profile/<int:user_id>/', PublicProfileView.as_view(), name='public-profile'),
     path('send-verification-code/', SendVerificationCodeView.as_view(), name='send-verification-code'),
     path('update-profile/', UpdateProfileView.as_view(), name='update-profile'),
+    path('program-reviews/', ProgramReviewView.as_view(), name='program-reviews'),
+    path('remove-profile-photo/', RemoveProfilePhotoView.as_view(), name='remove-profile-photo'),
+    path('signup/', SignupView.as_view(), name='signup'),
+    path('login/', LoginView.as_view(), name='login'),
+    path('forgot-password/', ForgotPasswordView.as_view(), name='forgot-password'),
+    path('checkout-email/', CheckoutEmailView.as_view(), name='checkout-email'),
+    path('payment-confirmation-email/', PaymentConfirmationEmailView.as_view(), name='payment-confirmation-email'),
 ]

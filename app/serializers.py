@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import User
+from .models import ProgramReview
 
 class UserSerializer(serializers.ModelSerializer):
     profile_photo_url = serializers.SerializerMethodField()
@@ -13,3 +14,10 @@ class UserSerializer(serializers.ModelSerializer):
         if obj.profile_photo and hasattr(obj.profile_photo, 'url'):
             return request.build_absolute_uri(obj.profile_photo.url)
         return None
+
+class ProgramReviewSerializer(serializers.ModelSerializer):
+    user_email = serializers.ReadOnlyField(source='user.email')
+
+    class Meta:
+        model = ProgramReview
+        fields = ['id', 'user', 'user_email', 'program', 'rating', 'comment', 'created_at', 'updated_at']
