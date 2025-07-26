@@ -86,6 +86,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 @method_decorator(csrf_exempt, name='dispatch')
 class LoginView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         identifier = request.data.get('username', '').strip()
         password = request.data.get('password')
