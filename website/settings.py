@@ -1,15 +1,19 @@
+
 import os
 from pathlib import Path
 from corsheaders.defaults import default_headers
 BASE_DIR = Path(__file__).resolve().parent.parent
 import pymysql
 pymysql.install_as_MySQLdb()
+from dotenv import load_dotenv
+load_dotenv(str(BASE_DIR / '.env'))
 
 # Secret and debug (replace with your own secure values)
 SECRET_KEY = 'your-secret-key-here'
-DEBUG = True
+DEBUG = False  # Set to True for development, False in production
 ALLOWED_HOSTS = ['*']  # Change this in production!
 
+AUTH_USER_MODEL = 'app.User'
 # Installed apps (add these)
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -111,8 +115,6 @@ STATIC_URL = 'static/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
-from dotenv import load_dotenv
-load_dotenv(str(BASE_DIR / '.env'))
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CORS
