@@ -163,6 +163,10 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # Static files
 STATIC_URL = '/static/'
 
+# Session and cookie settings for cross-origin authentication
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_SAMESITE = 'None'  # Use 'None' for cross-site cookies
+SESSION_COOKIE_SECURE = True      # Required for 'None', must use HTTPS
 # Django REST Framework config (basic)
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
