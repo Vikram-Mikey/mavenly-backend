@@ -21,3 +21,19 @@ class ProgramReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProgramReview
         fields = ['id', 'user', 'user_email', 'program', 'rating', 'comment', 'created_at', 'updated_at']
+
+
+# SignupSerializer for user registration
+class SignupSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, min_length=8)
+
+    class Meta:
+        model = User
+        fields = ['email', 'name', 'phone', 'bio', 'profile_photo', 'password']
+
+    def create(self, validated_data):
+        password = validated_data.pop('password')
+        user = User(**validated_data)
+        user.set_password(password)
+        user.save()
+        return user
