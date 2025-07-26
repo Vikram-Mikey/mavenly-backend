@@ -1,26 +1,12 @@
 from rest_framework.views import APIView
-# Remove profile photo API
 from rest_framework.permissions import IsAuthenticated
-
-class RemoveProfilePhotoView(APIView):
-    def post(self, request):
-        user_id = request.COOKIES.get('user_id')
-        if not user_id:
-            return Response({'error': 'User not authenticated.'}, status=status.HTTP_401_UNAUTHORIZED)
-        try:
-            user = User.objects.get(id=user_id)
-        except User.DoesNotExist:
-            return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
-        user.photo_url = ''
-        user.save()
-        return Response({'success': 'Profile photo removed.'})
-from django.shortcuts import render
-from django.contrib.auth import authenticate, login
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.views import APIView
-from .serializers import SignupSerializer, UserSerializer, ProgramReviewSerializer
 from .models import User, ProgramReview
+from uuid import uuid4
+from django.shortcuts import render
+from django.contrib.auth import authenticate, login
+from .serializers import SignupSerializer, UserSerializer, ProgramReviewSerializer
 from django.contrib.auth.hashers import make_password, check_password
 from .forgot_password_otp import ForgotPasswordOTPView, ForgotPasswordVerifyOTPView
 from django.core.mail import send_mail
@@ -31,31 +17,46 @@ from django.core.files.base import ContentFile
 from django.conf import settings
 import os
 import random
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+import random
+import logging
+
+from django.core.mail import send_mail
+from django.conf import settings
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+from django.contrib.auth.hashers import make_password
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+
+from .models import User
+from .serializers import UserSerializer
 
 # In-memory store for verification codes (for demo; use a DB or cache in production)
 verification_codes = {}
+
+class RemoveProfilePhotoView(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        user = request.user
+        if not user.is_authenticated:
+            return Response({'error': 'User not authenticated.'}, status=status.HTTP_401_UNAUTHORIZED)
+        user.photo_url = ''
+        user.save()
+        return Response({'success': 'Profile photo removed.'})
 
 class SignupView(APIView):
     def post(self, request):
         serializer = SignupSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save(password=make_password(serializer.validated_data['password']))
-            response = Response(UserSerializer(user, context={'request': request}).data, status=status.HTTP_201_CREATED)
-            # Secure cookie settings from settings.py
-            cookie_opts = {
-                'path': '/',
-                'secure': getattr(settings, 'USER_COOKIE_SECURE', True),
-                'samesite': getattr(settings, 'USER_COOKIE_SAMESITE', 'Lax'),
-                'httponly': getattr(settings, 'USER_COOKIE_HTTPONLY', False),
-            }
-            response.set_cookie('user_id', str(user.id), **cookie_opts)
-            return response
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-from django.conf import settings
-# API endpoint to provide UPI number and QR image URL securely
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
-from rest_framework.response import Response
+            return Response(UserSerializer(user, context={'request': request}).data, status=status.HTTP_201_CREATED)
+        return Response({'error': 'Invalid input.'}, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -70,7 +71,6 @@ class LoginView(APIView):
         identifier = request.data.get('username', '').strip()
         password = request.data.get('password')
         user = None
-        # Try to find user by username (case-sensitive) or email (case-insensitive)
         try:
             user = User.objects.get(username=identifier)
         except User.DoesNotExist:
@@ -98,11 +98,10 @@ class ForgotPasswordView(APIView):
         new_password = request.data.get('new_password')
         if not username or not new_password:
             return Response({'error': 'Username and new password are required.'}, status=status.HTTP_400_BAD_REQUEST)
-        # Validate password using SignupSerializer logic
         serializer = SignupSerializer(data={'username': username, 'password': new_password, 'email': 'dummy@email.com', 'phone': '0000000000'})
         try:
             serializer.is_valid(raise_exception=True)
-        except Exception as e:
+        except Exception:
             return Response({'error': serializer.errors.get('password', ['Invalid password'])[0]}, status=status.HTTP_400_BAD_REQUEST)
         try:
             user = User.objects.get(username=username)
@@ -137,14 +136,7 @@ class CheckoutEmailView(APIView):
                 if isinstance(item, dict):
                     program = item.get('program', '-')
                     plan = item.get('plan', '-')
-                    # Try to get price from multiple possible keys
-                    price = item.get('price')
-                    if price is None:
-                        price = item.get('plan_amount')
-                    if price is None:
-                        price = item.get('amount')
-                    if price is None:
-                        price = '-'
+                    price = item.get('price') or item.get('plan_amount') or item.get('amount') or '-'
                     cart_items_str += f"{idx:<4} {program:<30} {plan:<15} {price:<10}\n"
                 else:
                     cart_items_str += f"{idx:<4} {str(item):<30} {'-':<15} {'-':<10}\n"
@@ -160,7 +152,6 @@ class CheckoutEmailView(APIView):
         elif referral_name:
             referral_str = f"\nReferral Name: {referral_name}\n"
 
-        # Add total, original, and discount info
         amount_str = ''
         if original_amount is not None and discount_amount is not None and total is not None:
             try:
@@ -184,9 +175,9 @@ Phone  : {phone}
 {referral_str}
 {cart_items_str}
 {amount_str}
-Thank you for using Mavenly!\nPlease process the payment/order accordingly.
+Thank you for using Mavenly!
+Please process the payment/order accordingly.
 """
-        from django.conf import settings
         send_mail(
             subject,
             message,
@@ -195,9 +186,6 @@ Thank you for using Mavenly!\nPlease process the payment/order accordingly.
             fail_silently=False,
         )
         return Response({'success': 'Checkout email sent to host.'})
-
-from rest_framework.response import Response
-from rest_framework import status
 
 class ProgramReviewView(APIView):
     def get(self, request):
@@ -212,23 +200,15 @@ class ProgramReviewView(APIView):
         data = request.data.copy()
         from datetime import datetime
         data['created_at'] = datetime.utcnow().isoformat()
-        print("Incoming review POST data:", data)
         serializer = ProgramReviewSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
-            print("Review saved successfully.")
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        print("Serializer errors:", serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk=None):
-        # Only allow host/admin to delete
-        from django.conf import settings
-        ADMIN_EMAIL = getattr(settings, 'HOST_EMAIL', None)
-        if not ADMIN_EMAIL:
-            ADMIN_EMAIL = 'r.vikram.s321@gmail.com'
+        ADMIN_EMAIL = getattr(settings, 'HOST_EMAIL', 'r.vikram.s321@gmail.com')
         user_email = request.COOKIES.get('user_email') or request.headers.get('X-User-Email')
-        print(f"DEBUG: user_email={user_email!r}, ADMIN_EMAIL={ADMIN_EMAIL!r}")
         if not user_email or user_email.strip().lower() != ADMIN_EMAIL.strip().lower():
             return Response({'error': 'Not authorized.'}, status=status.HTTP_403_FORBIDDEN)
         review_id = pk or request.GET.get('id')
@@ -242,11 +222,9 @@ class ProgramReviewView(APIView):
             return Response({'error': 'Review not found.'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 class PaymentConfirmationEmailView(APIView):
     def post(self, request):
-        # The frontend must send the total value (including discounts) as calculated on the Addcart page.
-        # Example frontend payload:
-        # axios.post('/api/payment-confirmation/', { name, email, cart, total, ... })
         name = request.data.get('name')
         email = request.data.get('email')
         cart = request.data.get('cart', [])
@@ -256,32 +234,102 @@ class PaymentConfirmationEmailView(APIView):
         if not all([name, email]) or not cart or total is None:
             return Response({'error': 'Name, email, cart, and total are required.'}, status=status.HTTP_400_BAD_REQUEST)
         subject = '🧾 Invoice & Payment Confirmation - Mavenly'
+
+        cart_items_str = ''
+        if cart:
+            cart_items_str = '\nItems Paid for:'
+            cart_items_str += '\n-------------------------------\n'
+            cart_items_str += f"{'No.':<4} {'Item':<30} {'Plan':<15} {'Price':<10}\n"
+            cart_items_str += '-'*65 + '\n'
+            for idx, item in enumerate(cart, 1):
+                if isinstance(item, dict):
+                    program = item.get('program', '-')
+                    plan = item.get('plan', '-')
+                    price = item.get('price') or item.get('plan_amount') or item.get('amount') or '-'
+                    cart_items_str += f"{idx:<4} {program:<30} {plan:<15} {price:<10}\n"
+                else:
+                    cart_items_str += f"{idx:<4} {str(item):<30} {'-':<15} {'-':<10}\n"
+            cart_items_str += '-------------------------------\n'
+        else:
+            cart_items_str = '\n(No items in cart)\n'
+
+        amount_str = ''
+        if original_amount is not None and discount_amount is not None and total is not None:
+            try:
+                original_amount = float(original_amount)
+                discount_amount = float(discount_amount)
+                total = float(total)
+                amount_str = f"\nOriginal Amount: ₹{original_amount:,.2f}\nDiscount: -₹{discount_amount:,.2f}\nTotal Paid: ₹{total:,.2f}\n"
+            except:
+                pass
+
+        message = f"""
+==============================
+Mavenly Payment Confirmation
+==============================
+
+Customer Details:
+Name   : {name}
+Email  : {email}
+
+{cart_items_str}
+{amount_str}
+
+Thank you for your payment!
+"""
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [email],
+            fail_silently=False,
+        )
+        return Response({'success': 'Payment confirmation email sent.'})
+
+# You can add other views below as needed...
+
+
+
+# Simple in-memory store for verification codes (for demo only)
+verification_codes = {}
+
+class InvoiceEmailView(APIView):
+    def post(self, request):
+        # Extract data from request
+        name = request.data.get('name')
+        email = request.data.get('email')
+        cart = request.data.get('cart', [])
+        total = request.data.get('total')
+        original_amount = request.data.get('original_amount')
+        discount_amount = request.data.get('discount_amount')
+
+        if not all([name, email, total]):
+            return Response({'error': 'Name, email, and total are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validate total, original_amount, discount_amount as floats
         try:
             total = float(total)
-        except:
+        except (TypeError, ValueError):
             return Response({'error': 'Invalid total value.'}, status=status.HTTP_400_BAD_REQUEST)
-        # Parse original and discount amounts if present
+
         try:
             original_amount = float(original_amount)
-        except:
+        except (TypeError, ValueError):
             original_amount = None
+
         try:
             discount_amount = float(discount_amount)
-        except:
+        except (TypeError, ValueError):
             discount_amount = None
+
+        # Build invoice rows HTML
         invoice_rows = ''
         if cart:
             for idx, item in enumerate(cart, 1):
                 if isinstance(item, dict):
                     program = item.get('program', '-')
                     plan = item.get('plan', '-')
-                    price = item.get('price')
-                    if price is None:
-                        price = item.get('plan_amount')
-                    if price is None:
-                        price = item.get('amount')
-                    if price is None:
-                        price = '-'
+                    price = item.get('price') or item.get('plan_amount') or item.get('amount') or '-'
                     invoice_rows += f"<tr style='background:#f9fafb;'>"
                     invoice_rows += f"<td style='padding:8px 6px;border:1px solid #e5e7eb;text-align:center;'>{idx}</td>"
                     invoice_rows += f"<td style='padding:8px 6px;border:1px solid #e5e7eb;'>{program}</td>"
@@ -293,7 +341,7 @@ class PaymentConfirmationEmailView(APIView):
         else:
             invoice_rows = "<tr><td colspan='4' style='padding:12px;text-align:center;color:#ef4444;'>No items in cart</td></tr>"
 
-        # Add original, discount, and total info below the table
+        # Add original, discount summary rows
         summary_html = ''
         if original_amount is not None and discount_amount is not None:
             summary_html = f'''
@@ -309,6 +357,7 @@ class PaymentConfirmationEmailView(APIView):
               </tr>
             '''
 
+        # Compose full HTML message
         html_message = f'''
         <div style="font-family:Arial,sans-serif;max-width:540px;margin:0 auto;background:#fff;border-radius:14px;padding:32px 28px 28px 28px;box-shadow:0 4px 24px #0001;border:1.5px solid #2563eb;">
           <div style="text-align:center;margin-bottom:18px;">
@@ -341,6 +390,7 @@ class PaymentConfirmationEmailView(APIView):
           <div style="font-size:14px;color:#64748b;text-align:center;">If you have any questions, please contact us.<br/><br/>Best regards,<br/>Mavenly Team</div>
         </div>
         '''
+
         message = f"""
 ==============================
 Mavenly Invoice & Payment Confirmation
@@ -352,29 +402,38 @@ Thank you for your payment! Your order has been received and processed successfu
 
 If you have any questions, please contact us.
 
-Best regards,\nMavenly Team
+Best regards,
+Mavenly Team
 """
-        send_mail(
-            subject,
-            message,
-            settings.DEFAULT_FROM_EMAIL,
-            [email],
-            fail_silently=False,
-            html_message=html_message
-        )
+        try:
+            send_mail(
+                'Mavenly Payment Confirmation',
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=False,
+                html_message=html_message,
+            )
+        except Exception as e:
+            logging.exception("Failed to send invoice email")
+            return Response({'error': f'Failed to send confirmation email: {str(e)}'}, status=500)
+
         return Response({'success': 'Confirmation email sent to user.'})
+
+# Other API views follow similar pattern
 
 class ContactEnquiryEmailView(APIView):
     def post(self, request):
-        import logging
         name = request.data.get('name')
         email = request.data.get('email')
-        message = request.data.get('message')
+        message_text = request.data.get('message')
         phone = request.data.get('phone')
         company = request.data.get('company') or ''
         subject_text = request.data.get('subject') or ''
-        if not all([name, email, message]):
+
+        if not all([name, email, message_text]):
             return Response({'error': 'Name, email, and message are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
         subject = '📩 New Enquiry Received - Mavenly'
         message_body = f"""
 ==============================
@@ -389,11 +448,10 @@ Subject: {subject_text}
 
 Message:
 --------
-{message}
+{message_text}
 
 Please respond to the enquiry as soon as possible.
 """
-        from django.conf import settings
         try:
             send_mail(
                 subject,
@@ -402,23 +460,24 @@ Please respond to the enquiry as soon as possible.
                 [getattr(settings, 'HOST_EMAIL', settings.DEFAULT_FROM_EMAIL)],
                 fail_silently=False,
             )
-            return Response({'success': 'Enquiry email sent to host.'})
         except Exception as e:
             logging.exception("Failed to send enquiry email")
             return Response({'error': f'Failed to send enquiry email: {str(e)}'}, status=500)
+        return Response({'success': 'Enquiry email sent to host.'})
 
 class ProgramDevEnquiryEmailView(APIView):
     def post(self, request):
-        import logging
         name = request.data.get('name')
         email = request.data.get('email')
         phone = request.data.get('phone')
         company = request.data.get('company', '-')
         program = request.data.get('program', '-')
+
         if not all([name, email, phone, company]):
             return Response({'error': 'Name, email, phone, and company are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
         subject = '📩 New Program Enquiry - Mavenly'
-        message = f"""
+        message_body = f"""
 ==============================
 Mavenly Program Enquiry
 ==============================
@@ -431,19 +490,18 @@ Program: {program}
 
 This is a program enquiry from the ProgramDevSection form.
 """
-        from django.conf import settings
         try:
             send_mail(
                 subject,
-                message,
+                message_body,
                 settings.DEFAULT_FROM_EMAIL,
                 [getattr(settings, 'HOST_EMAIL', settings.DEFAULT_FROM_EMAIL)],
                 fail_silently=False,
             )
-            return Response({'success': 'Program enquiry email sent to host.'})
         except Exception as e:
             logging.exception("Failed to send program enquiry email")
             return Response({'error': f'Failed to send program enquiry email: {str(e)}'}, status=500)
+        return Response({'success': 'Program enquiry email sent to host.'})
 
 class FreelancingProgramDevEnquiryEmailView(APIView):
     def post(self, request):
@@ -454,10 +512,12 @@ class FreelancingProgramDevEnquiryEmailView(APIView):
         office_motive = request.data.get('officeMotive', '')
         preference = request.data.get('preference', '')
         program = request.data.get('program', '')
+
         if not all([name, email, phone]):
             return Response({'error': 'Name, email, and phone are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
         subject = '📩 New Freelancing Program Enquiry - Mavenly'
-        message = f"""
+        message_body = f"""
 ==============================
 Mavenly Freelancing Program Enquiry
 ==============================
@@ -472,14 +532,17 @@ Program      : {program}
 
 This is a freelancing program enquiry from the FreelancingProgramDevSection form.
 """
-        from django.conf import settings
-        send_mail(
-            subject,
-            message,
-            settings.DEFAULT_FROM_EMAIL,
-            [getattr(settings, 'HOST_EMAIL', settings.DEFAULT_FROM_EMAIL)],
-            fail_silently=False,
-        )
+        try:
+            send_mail(
+                subject,
+                message_body,
+                settings.DEFAULT_FROM_EMAIL,
+                [getattr(settings, 'HOST_EMAIL', settings.DEFAULT_FROM_EMAIL)],
+                fail_silently=False,
+            )
+        except Exception as e:
+            logging.exception("Failed to send freelancing program enquiry email")
+            return Response({'error': f'Failed to send freelancing program enquiry email: {str(e)}'}, status=500)
         return Response({'success': 'Freelancing program enquiry email sent to host.'})
 
 class ProfileView(APIView):
@@ -489,29 +552,30 @@ class ProfileView(APIView):
             return Response({'error': 'User not authenticated.'}, status=status.HTTP_401_UNAUTHORIZED)
         try:
             user = User.objects.get(id=user_id)
-            return Response(UserSerializer(user, context={'request': request}).data)
+            serializer = UserSerializer(user, context={'request': request})
+            return Response(serializer.data)
         except User.DoesNotExist:
             return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
 
 @method_decorator(csrf_exempt, name='dispatch')
-
-
 class PublicProfileView(APIView):
     def get(self, request, user_id):
         try:
             user = User.objects.get(id=user_id)
-            return Response(UserSerializer(user, context={'request': request}).data)
+            serializer = UserSerializer(user, context={'request': request})
+            return Response(serializer.data)
         except User.DoesNotExist:
             return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
-        
-        
+
 class SendVerificationCodeView(APIView):
     def post(self, request):
         email = request.data.get('email')
         if not email:
             return Response({'error': 'Email is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
         code = str(random.randint(100000, 999999))
         verification_codes[email] = code
+
         html_message = f'''
         <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#f8fafc;border-radius:12px;padding:32px 24px 24px 24px;box-shadow:0 4px 24px #0001;">
           <div style="text-align:center;margin-bottom:18px;">
@@ -519,76 +583,74 @@ class SendVerificationCodeView(APIView):
             <h2 style="color:#2563eb;margin:0 0 8px 0;font-size:1.6rem;">Email Verification Code</h2>
           </div>
           <div style="background:#fff;border-radius:8px;padding:24px 18px;margin-bottom:18px;border:1px solid #e0e7ef;text-align:center;">
-            <div style="font-size:15px;color:#374151;margin-bottom:10px;">Use the code below to verify your email address:</div>
-            <div style="font-size:2.2rem;letter-spacing:0.2em;font-weight:700;color:#2563eb;background:#f1f5f9;padding:12px 0;border-radius:7px;display:inline-block;width:180px;">{code}</div>
+            <p style="font-size:18px;color:#374151;margin-bottom:12px;">Your verification code is:</p>
+            <p style="font-weight:bold;font-size:26px;color:#2563eb;letter-spacing:6px;margin:0;">{code}</p>
           </div>
-          <div style="font-size:14px;color:#64748b;text-align:center;">This code is valid for a short time. If you did not request this, you can ignore this email.<br/><br/>Thank you,<br/>Mavenly Team</div>
+          <div style="font-size:14px;color:#64748b;text-align:center;">If you did not request this, please ignore this email.</div>
         </div>
         '''
         try:
             send_mail(
-                'Your Verification Code',
+                'Mavenly Email Verification Code',
                 f'Your verification code is: {code}',
                 settings.DEFAULT_FROM_EMAIL,
                 [email],
                 fail_silently=False,
-                html_message=html_message
+                html_message=html_message,
             )
-            return Response({'success': 'Verification code sent.'})
         except Exception as e:
-            import logging
             logging.exception("Failed to send verification code email")
             return Response({'error': f'Failed to send verification code: {str(e)}'}, status=500)
+        return Response({'success': 'Verification code sent.'})
 
 @method_decorator(csrf_exempt, name='dispatch')
 class UpdateProfileView(APIView):
-    def post(self, request):
+    def put(self, request):
         user_id = request.COOKIES.get('user_id')
         if not user_id:
             return Response({'error': 'User not authenticated.'}, status=status.HTTP_401_UNAUTHORIZED)
-        try:
-            user = User.objects.get(id=user_id)
-        except User.DoesNotExist:
-            return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
-        field = request.data.get('field')
-        value = request.data.get('value')
-        code = request.data.get('verification_code')
-        password = request.data.get('password')
-        if not all([field, value, code]):
-            return Response({'error': 'All fields and verification code are required.'}, status=status.HTTP_400_BAD_REQUEST)
-        email = user.email if field != 'email' else value
-        if verification_codes.get(email) != code:
-            return Response({'error': 'Invalid verification code.'}, status=status.HTTP_400_BAD_REQUEST)
-        if field == 'username':
-            user.username = value
-        elif field == 'email':
-            user.email = value
-        elif field == 'phone':
-            user.phone = value
-        elif field == 'password':
-            if not password:
-                return Response({'error': 'Password is required.'}, status=status.HTTP_400_BAD_REQUEST)
-            user.password = make_password(password)
-        else:
-            return Response({'error': 'Invalid field.'}, status=status.HTTP_400_BAD_REQUEST)
-        user.save()
-        verification_codes.pop(email, None)
-        return Response({'success': 'Profile updated.'})
 
-class UploadProfilePhotoView(APIView):
-    def post(self, request):
-        user_id = request.COOKIES.get('user_id')
-        if not user_id:
-            return Response({'error': 'User not authenticated.'}, status=status.HTTP_401_UNAUTHORIZED)
+        data = request.data
+        verification_code = data.get('verification_code')
+        email = data.get('email')
+
+        # Verify code
+        if not (email and verification_code and verification_codes.get(email) == verification_code):
+            return Response({'error': 'Invalid or missing verification code.'}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             user = User.objects.get(id=user_id)
         except User.DoesNotExist:
             return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
-        photo = request.FILES.get('photo')
-        if not photo:
-            return Response({'error': 'No photo uploaded.'}, status=status.HTTP_400_BAD_REQUEST)
-        filename = f'user_{user.id}_profile.jpg'
-        path = default_storage.save(f'profile_photos/{filename}', ContentFile(photo.read()))
-        user.photo_url = default_storage.url(path)
+
+        # Update fields if provided
+        if 'name' in data:
+            user.name = data['name']
+
+        if 'email' in data:
+            user.email = data['email']
+
+        if 'password' in data:
+            user.password = make_password(data['password'])
+
+        if 'phone' in data:
+            user.phone = data['phone']
+
+        if 'bio' in data:
+            user.bio = data['bio']
+
+        # Handle profile photo upload if exists
+        photo_file = request.FILES.get('profile_photo')
+        if photo_file:
+            filename = f"profile_{user_id}.jpg"
+            try:
+                path = default_storage.save(filename, ContentFile(photo_file.read()))
+                user.profile_photo = path
+            except Exception as e:
+                logging.exception("Failed to save profile photo")
+                return Response({'error': 'Failed to save profile photo.'}, status=500)
+
         user.save()
-        return Response({'photo_url': user.photo_url})
+        serializer = UserSerializer(user, context={'request': request})
+        return Response(serializer.data)
+

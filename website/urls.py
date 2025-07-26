@@ -24,6 +24,9 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('app.urls')),
     path('', FrontendAppView.as_view(), name='frontpage'),
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),   # Get tokens
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),  # Refresh access token
 ]
+
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
