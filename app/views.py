@@ -43,6 +43,7 @@ from .serializers import UserSerializer
 # In-memory store for verification codes (for demo; use a DB or cache in production)
 verification_codes = {}
 
+@method_decorator(csrf_exempt, name='dispatch')
 class RemoveProfilePhotoView(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
@@ -53,6 +54,7 @@ class RemoveProfilePhotoView(APIView):
         user.save()
         return Response({'success': 'Profile photo removed.'})
 
+@method_decorator(csrf_exempt, name='dispatch')
 class LogoutView(APIView):
     def post(self, request):
         try:
