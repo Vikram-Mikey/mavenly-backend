@@ -2,6 +2,9 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from rest_framework.response import Response
+from django.contrib.auth import logout as django_logout
+
+# Add a logout API view
 from .models import User, ProgramReview
 from uuid import uuid4
 from django.shortcuts import render
@@ -49,6 +52,11 @@ class RemoveProfilePhotoView(APIView):
         user.photo_url = ''
         user.save()
         return Response({'success': 'Profile photo removed.'})
+
+class LogoutView(APIView):
+    def post(self, request):
+        django_logout(request)
+        return Response({'success': 'Logged out successfully.'}, status=status.HTTP_200_OK)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class SignupView(APIView):
