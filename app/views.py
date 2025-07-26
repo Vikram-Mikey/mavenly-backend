@@ -55,7 +55,10 @@ class RemoveProfilePhotoView(APIView):
 
 class LogoutView(APIView):
     def post(self, request):
-        django_logout(request)
+        try:
+            django_logout(request)
+        except Exception:
+            pass
         return Response({'success': 'Logged out successfully.'}, status=status.HTTP_200_OK)
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -89,16 +92,8 @@ class LoginView(APIView):
             except User.DoesNotExist:
                 return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
         if user and check_password(password, user.password):
-            response = Response(UserSerializer(user, context={'request': request}).data)
-            cookie_opts = {
-                'path': '/',
-                'secure': getattr(settings, 'USER_COOKIE_SECURE', True),
-                'samesite': getattr(settings, 'USER_COOKIE_SAMESITE', 'Lax'),
-                'httponly': getattr(settings, 'USER_COOKIE_HTTPONLY', False),
-            }
-            response.set_cookie('user_id', str(user.id), **cookie_opts)
-            response.set_cookie('user_email', user.email, **cookie_opts)
-            return response
+            login(request, user)  # Django session login
+            return Response(UserSerializer(user, context={'request': request}).data)
         else:
             return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -556,16 +551,13 @@ This is a freelancing program enquiry from the FreelancingProgramDevSection form
         return Response({'success': 'Freelancing program enquiry email sent to host.'})
 
 class ProfileView(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request):
-        user_id = request.COOKIES.get('user_id')
-        if not user_id:
+        user = request.user
+        if not user.is_authenticated:
             return Response({'error': 'User not authenticated.'}, status=status.HTTP_401_UNAUTHORIZED)
-        try:
-            user = User.objects.get(id=user_id)
-            serializer = UserSerializer(user, context={'request': request})
-            return Response(serializer.data)
-        except User.DoesNotExist:
-            return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = UserSerializer(user, context={'request': request})
+        return Response(serializer.data)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class PublicProfileView(APIView):
@@ -615,9 +607,10 @@ class SendVerificationCodeView(APIView):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class UpdateProfileView(APIView):
+    permission_classes = [IsAuthenticated]
     def put(self, request):
-        user_id = request.COOKIES.get('user_id')
-        if not user_id:
+        user = request.user
+        if not user.is_authenticated:
             return Response({'error': 'User not authenticated.'}, status=status.HTTP_401_UNAUTHORIZED)
 
         data = request.data
@@ -627,11 +620,6 @@ class UpdateProfileView(APIView):
         # Verify code
         if not (email and verification_code and verification_codes.get(email) == verification_code):
             return Response({'error': 'Invalid or missing verification code.'}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            user = User.objects.get(id=user_id)
-        except User.DoesNotExist:
-            return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
 
         # Update fields if provided
         if 'name' in data:
@@ -652,7 +640,7 @@ class UpdateProfileView(APIView):
         # Handle profile photo upload if exists
         photo_file = request.FILES.get('profile_photo')
         if photo_file:
-            filename = f"profile_{user_id}.jpg"
+            filename = f"profile_{user.id}.jpg"
             try:
                 path = default_storage.save(filename, ContentFile(photo_file.read()))
                 user.profile_photo = path
