@@ -1,12 +1,13 @@
 
 import os
 from pathlib import Path
-from corsheaders.defaults import default_headers
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 import pymysql
 pymysql.install_as_MySQLdb()
 from dotenv import load_dotenv
-load_dotenv(str(BASE_DIR / '.env'))
+from corsheaders.defaults import default_headers
+load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 # Secret and debug (replace with your own secure values)
 SECRET_KEY = 'your-secret-key-here'
