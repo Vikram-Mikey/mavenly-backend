@@ -5,8 +5,6 @@ class UserManager(BaseUserManager):
     def create_user(self, email, username=None, password=None, **extra_fields):
         if not email:
             raise ValueError('Users must have an email address')
-        if not username:
-            raise ValueError('Users must have a username')
         email = self.normalize_email(email)
         user = self.model(email=email, username=username, **extra_fields)
         user.set_password(password)
@@ -19,7 +17,7 @@ class UserManager(BaseUserManager):
         return self.create_user(email, username, password, **extra_fields)
 
 class User(AbstractBaseUser, PermissionsMixin):
-    username = models.CharField(max_length=150, unique=True)
+    username = models.CharField(max_length=150, unique=True, null=True, blank=True)
     email = models.EmailField(unique=True)
     name = models.CharField(max_length=255, blank=True)
     phone = models.CharField(max_length=20, blank=True)
