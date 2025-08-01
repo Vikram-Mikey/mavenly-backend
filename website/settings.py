@@ -120,10 +120,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CORS
 CORS_ALLOWED_ORIGINS = [
-    "https://mavenly-frontend-f5kl.vercel.app",
-    "https://mavenly-frontend.vercel.app",
-    "http://localhost:3000",
-    "http://localhost:5173",
+    "https://mavenly.in",
+    "https://mavenly-backend.railway.internal",
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = list(default_headers) + [
