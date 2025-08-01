@@ -122,6 +122,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOWED_ORIGINS = [
     "https://mavenly.in",
     "https://mavenly-backend.railway.internal",
+    "https://mavenly-backend-production.up.railway.app",
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = list(default_headers) + [
