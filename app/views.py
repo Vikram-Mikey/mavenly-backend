@@ -91,18 +91,21 @@ class LoginView(APIView):
         identifier = request.data.get('username', '').strip()
         password = request.data.get('password')
         user = None
+        # Try username first
         try:
             user = User.objects.get(username=identifier)
         except User.DoesNotExist:
+            # Try email next
             try:
                 user = User.objects.get(email__iexact=identifier)
             except User.DoesNotExist:
-                return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
-        if user and check_password(password, user.password):
+                return Response({'error': 'Username or email not found.'}, status=status.HTTP_400_BAD_REQUEST)
+        # User found, check password
+        if check_password(password, user.password):
             login(request, user)  # Django session login
             return Response(UserSerializer(user, context={'request': request}).data)
         else:
-            return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Incorrect password.'}, status=status.HTTP_400_BAD_REQUEST)
 
 class ForgotPasswordView(APIView):
     def post(self, request):
