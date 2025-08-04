@@ -5,9 +5,19 @@ from rest_framework.permissions import AllowAny
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def forgot_password_otp(request):
-    email = request.data.get('email')
-    if not email:
-        return Response({'error': 'Email is required.'}, status=status.HTTP_400_BAD_REQUEST)
+    identifier = request.data.get('identifier')
+    if not identifier:
+        return Response({'error': 'Username or email is required.'}, status=status.HTTP_400_BAD_REQUEST)
+    # Find user by username or email
+    from .models import User
+    try:
+        user = User.objects.get(username=identifier)
+    except User.DoesNotExist:
+        try:
+            user = User.objects.get(email__iexact=identifier)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+    email = user.email
     # Generate OTP
     otp = str(random.randint(100000, 999999))
     verification_codes[email] = otp
