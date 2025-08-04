@@ -7,6 +7,7 @@ from rest_framework import status
 from .models import User
 from django.contrib.auth.hashers import make_password
 from .serializers import SignupSerializer
+from rest_framework.permissions import AllowAny
 
 OTP_STORE = {}
 
@@ -27,6 +28,7 @@ def validate_password(password):
     return errors
 
 class ForgotPasswordOTPView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         username_or_email = request.data.get('username')
         if not username_or_email:
@@ -64,6 +66,7 @@ class ForgotPasswordOTPView(APIView):
         return Response({'success': 'OTP sent to your email.'})
 
 class ForgotPasswordVerifyOTPView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         username = request.data.get('username')
         otp = request.data.get('otp')
