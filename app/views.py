@@ -119,25 +119,6 @@ class LoginView(APIView):
             logging.warning(f"Login failed: incorrect password for identifier '{identifier}' (id={user.id})")
             return Response({'error': 'Incorrect password.'}, status=status.HTTP_400_BAD_REQUEST)
 
-class ForgotPasswordView(APIView):
-    permission_classes = [AllowAny]
-    def post(self, request):
-        username = request.data.get('username')
-        new_password = request.data.get('new_password')
-        if not username or not new_password:
-            return Response({'error': 'Username and new password are required.'}, status=status.HTTP_400_BAD_REQUEST)
-        serializer = SignupSerializer(data={'username': username, 'password': new_password, 'email': 'dummy@email.com', 'phone': '0000000000'})
-        try:
-            serializer.is_valid(raise_exception=True)
-        except Exception:
-            return Response({'error': serializer.errors.get('password', ['Invalid password'])[0]}, status=status.HTTP_400_BAD_REQUEST)
-        try:
-            user = User.objects.get(username=username)
-            user.password = make_password(new_password)
-            user.save()
-            return Response({'success': 'Password changed successfully.'})
-        except User.DoesNotExist:
-            return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
 
 class CheckoutEmailView(APIView):
     def post(self, request):

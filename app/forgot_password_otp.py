@@ -31,12 +31,16 @@ class ForgotPasswordOTPView(APIView):
         username_or_email = request.data.get('username')
         if not username_or_email:
             return Response({'error': 'Username or email is required.'}, status=status.HTTP_400_BAD_REQUEST)
-        # Only allow sending OTP to the email of a registered username
+        # Try to find user by username or email
+        user = None
         try:
             user = User.objects.get(username=username_or_email)
         except User.DoesNotExist:
-            return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
-        # Always send OTP to the email of the found user
+            try:
+                user = User.objects.get(email__iexact=username_or_email)
+            except User.DoesNotExist:
+                return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+        # Always send OTP to the email of the found user and host email
         otp = str(random.randint(100000, 999999))
         OTP_STORE[user.username] = otp
         subject = 'Mavenly Password Reset OTP'
