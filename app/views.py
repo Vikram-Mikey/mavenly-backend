@@ -57,12 +57,8 @@ class RemoveProfilePhotoView(APIView):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class LogoutView(APIView):
-    permission_classes = [IsAuthenticated]
     def post(self, request):
         logging.debug(f"LogoutView: user={request.user}, is_authenticated={getattr(request.user, 'is_authenticated', None)}, session_key={getattr(request.session, 'session_key', None)}")
-        if not request.user or not request.user.is_authenticated:
-            logging.warning("LogoutView: User not authenticated at logout.")
-            return Response({'error': 'User not authenticated.'}, status=status.HTTP_401_UNAUTHORIZED)
         try:
             django_logout(request)
             logging.info(f"LogoutView: Successfully logged out user {request.user} (session_key={getattr(request.session, 'session_key', None)})")
