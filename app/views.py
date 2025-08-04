@@ -1,3 +1,29 @@
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+
+# Simple OTP password reset endpoint
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def forgot_password_otp(request):
+    email = request.data.get('email')
+    if not email:
+        return Response({'error': 'Email is required.'}, status=status.HTTP_400_BAD_REQUEST)
+    # Generate OTP
+    otp = str(random.randint(100000, 999999))
+    verification_codes[email] = otp
+    # Send OTP via email
+    try:
+        send_mail(
+            'Mavenly Password Reset OTP',
+            f'Your password reset OTP is: {otp}',
+            settings.DEFAULT_FROM_EMAIL,
+            [email],
+            fail_silently=False,
+        )
+    except Exception as e:
+        logging.exception("Failed to send password reset OTP email")
+        return Response({'error': f'Failed to send OTP: {str(e)}'}, status=500)
+    return Response({'success': 'OTP sent to email.'})
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
