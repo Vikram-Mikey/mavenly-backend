@@ -105,15 +105,20 @@ class LoginView(APIView):
                 logging.warning(f"Login failed: identifier '{identifier}' not found.")
                 return Response({'error': 'Username or email not found.'}, status=status.HTTP_400_BAD_REQUEST)
         # User found, check password
-        password_matches = check_password(password, user.password)
-        logging.debug(f"Password check: entered='{password}', stored_hash='{user.password}', match={password_matches}")
-        if password_matches:
-            logging.info(f"Login successful for user '{identifier}'")
-            login(request, user)  # Django session login
-            return Response(UserSerializer(user, context={'request': request}).data)
+        # Only allow login if password is hashed
+        if user.password.startswith('pbkdf2_') or user.password.startswith('argon2$') or user.password.startswith('bcrypt$'):
+            password_matches = check_password(password, user.password)
+            logging.debug(f"Password check: entered='{password}', stored_hash='{user.password}', match={password_matches}")
+            if password_matches:
+                logging.info(f"Login successful for user '{identifier}'")
+                login(request, user)  # Django session login
+                return Response(UserSerializer(user, context={'request': request}).data)
+            else:
+                logging.warning(f"Login failed: incorrect password for identifier '{identifier}'")
+                return Response({'error': 'Incorrect password.'}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            logging.warning(f"Login failed: incorrect password for identifier '{identifier}'")
-            return Response({'error': 'Incorrect password.'}, status=status.HTTP_400_BAD_REQUEST)
+            logging.error(f"Login failed: password for user '{identifier}' is not hashed. Force password reset.")
+            return Response({'error': 'Password is not securely stored. Please reset your password.'}, status=status.HTTP_400_BAD_REQUEST)
 
 class ForgotPasswordView(APIView):
     def post(self, request):
