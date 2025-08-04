@@ -30,8 +30,6 @@ from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.contrib.auth.hashers import make_password
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -40,6 +38,9 @@ from rest_framework import status
 from .models import User
 from .serializers import UserSerializer
 from rest_framework.permissions import AllowAny
+
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 # In-memory store for verification codes (for demo; use a DB or cache in production)
 verification_codes = {}
 
@@ -558,6 +559,9 @@ This is a freelancing program enquiry from the FreelancingProgramDevSection form
             return Response({'error': f'Failed to send freelancing program enquiry email: {str(e)}'}, status=500)
         return Response({'success': 'Freelancing program enquiry email sent to host.'})
 
+
+
+@method_decorator(csrf_exempt, name='dispatch')
 class ProfileView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request):
