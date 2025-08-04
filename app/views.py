@@ -69,14 +69,6 @@ class RemoveProfilePhotoView(APIView):
         user.save()
         return Response({'success': 'Profile photo removed.'})
 
-@method_decorator(csrf_exempt, name='dispatch')
-class LogoutView(APIView):
-    def post(self, request):
-        try:
-            django_logout(request)
-        except Exception:
-            pass
-        return Response({'success': 'Logged out successfully.'}, status=status.HTTP_200_OK)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class SignupView(APIView):
