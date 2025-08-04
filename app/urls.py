@@ -12,7 +12,6 @@ from .views import (
     RemoveProfilePhotoView,
     SignupView,
     LoginView,
-    ForgotPasswordView,
     CheckoutEmailView,
     PaymentConfirmationEmailView,
     LogoutView,
