@@ -445,8 +445,9 @@ Mavenly Team
         return Response({'success': 'Confirmation email sent to user.'})
 
 # Other API views follow similar pattern
-
+@method_decorator(csrf_exempt, name='dispatch')
 class ContactEnquiryEmailView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         name = request.data.get('name')
         email = request.data.get('email')
@@ -528,7 +529,10 @@ This is a program enquiry from the ProgramDevSection form.
             return Response({'error': f'Failed to send program enquiry email: {str(e)}'}, status=500)
         return Response({'success': 'Program enquiry email sent to host.'})
 
+
+@method_decorator(csrf_exempt, name='dispatch')
 class FreelancingProgramDevEnquiryEmailView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         name = request.data.get('name')
         email = request.data.get('email')
