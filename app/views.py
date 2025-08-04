@@ -61,8 +61,14 @@ from rest_framework.decorators import api_view
 from django.views.decorators.csrf import csrf_exempt
 
 @csrf_exempt
-@api_view(['POST'])
+@api_view(['POST', 'GET'])
 def logout_view(request):
+    if request.method == 'GET':
+        # Health check for deployment debugging
+        return Response({'status': 'logout endpoint is live'}, status=200)
+    if request.method != 'POST':
+        logging.warning(f"logout_view: Method {request.method} not allowed")
+        return Response({'error': 'Method not allowed'}, status=404)
     logging.debug(f"logout_view: user={request.user}, is_authenticated={getattr(request.user, 'is_authenticated', None)}, session_key={getattr(request.session, 'session_key', None)}")
     try:
         django_logout(request)
