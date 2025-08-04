@@ -69,7 +69,11 @@ class SignupView(APIView):
     def post(self, request):
         serializer = SignupSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.save(password=make_password(serializer.validated_data['password']))
+            raw_password = serializer.validated_data['password']
+            hashed_password = make_password(raw_password)
+            logging.debug(f"Signup: raw_password='{raw_password}', hashed_password='{hashed_password}'")
+            user = serializer.save(password=hashed_password)
+            logging.debug(f"Signup: user.id={user.id}, user.username={user.username}, user.password={user.password}")
             return Response(UserSerializer(user, context={'request': request}).data, status=status.HTTP_201_CREATED)
         return Response({'error': 'Invalid input.'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -106,7 +110,7 @@ class LoginView(APIView):
                 return Response({'error': 'Username or email not found.'}, status=status.HTTP_400_BAD_REQUEST)
         # User found, check password
         password_matches = check_password(password, user.password)
-        logging.debug(f"Password verification: entered='{password}', stored_hash='{user.password}', match={password_matches}")
+        logging.debug(f"Login: entered_password='{password}', stored_hash='{user.password}', match={password_matches}")
         if password_matches:
             logging.info(f"Login successful for user '{identifier}' (id={user.id})")
             login(request, user)  # Django session login
