@@ -34,6 +34,7 @@ urlpatterns = [
     path('checkout-email/', CheckoutEmailView.as_view(), name='checkout-email'),
     path('payment-confirmation-email/', PaymentConfirmationEmailView.as_view(), name='payment-confirmation-email'),
     path('logout/', logout_view, name='logout'),
+    path('api/logout/', logout_view, name='api-logout'),
     path('forgot-password-otp/', ForgotPasswordOTPView.as_view(), name='forgot-password'),
     path('forgot-password-verify/', ForgotPasswordVerifyOTPView.as_view(), name='forgot_password_verify'),
 ]
