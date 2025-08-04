@@ -39,7 +39,7 @@ from rest_framework import status
 
 from .models import User
 from .serializers import UserSerializer
-
+from rest_framework.permissions import AllowAny
 # In-memory store for verification codes (for demo; use a DB or cache in production)
 verification_codes = {}
 
@@ -120,6 +120,7 @@ class LoginView(APIView):
             return Response({'error': 'Incorrect password.'}, status=status.HTTP_400_BAD_REQUEST)
 
 class ForgotPasswordView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         username = request.data.get('username')
         new_password = request.data.get('new_password')
