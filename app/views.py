@@ -57,6 +57,7 @@ class RemoveProfilePhotoView(APIView):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class LogoutView(APIView):
+    @csrf_exempt
     def post(self, request):
         logging.debug(f"LogoutView: user={request.user}, is_authenticated={getattr(request.user, 'is_authenticated', None)}, session_key={getattr(request.session, 'session_key', None)}")
         try:
