@@ -1,9 +1,14 @@
-# Function-based, CSRF-exempt logout endpoint for /logout/
-from rest_framework.decorators import api_view
+
+# Function-based, CSRF-exempt logout endpoint for /logout/ and /api/logout/
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.authentication import BasicAuthentication
+from rest_framework.permissions import AllowAny
 from django.views.decorators.csrf import csrf_exempt
 
 @csrf_exempt
 @api_view(['POST', 'GET'])
+@authentication_classes([BasicAuthentication])  # Remove SessionAuthentication to avoid CSRF
+@permission_classes([AllowAny])
 def logout_view(request):
     if request.method == 'GET':
         return Response({'status': 'logout endpoint is live'}, status=200)
