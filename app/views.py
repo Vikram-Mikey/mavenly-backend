@@ -101,7 +101,10 @@ class LoginView(APIView):
             except User.DoesNotExist:
                 return Response({'error': 'Username or email not found.'}, status=status.HTTP_400_BAD_REQUEST)
         # User found, check password
-        if check_password(password, user.password):
+        password_matches = check_password(password, user.password)
+        # Debug logging for troubleshooting
+        logging.debug(f"Login attempt for user '{identifier}'. Password match: {password_matches}")
+        if password_matches:
             login(request, user)  # Django session login
             return Response(UserSerializer(user, context={'request': request}).data)
         else:
