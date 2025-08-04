@@ -55,17 +55,21 @@ class RemoveProfilePhotoView(APIView):
         user.save()
         return Response({'success': 'Profile photo removed.'})
 
-@method_decorator(csrf_exempt, name='dispatch')
-class LogoutView(APIView):
-    @csrf_exempt
-    def post(self, request):
-        logging.debug(f"LogoutView: user={request.user}, is_authenticated={getattr(request.user, 'is_authenticated', None)}, session_key={getattr(request.session, 'session_key', None)}")
-        try:
-            django_logout(request)
-            logging.info(f"LogoutView: Successfully logged out user {request.user} (session_key={getattr(request.session, 'session_key', None)})")
-        except Exception as e:
-            logging.error(f"LogoutView: Exception during logout: {e}")
-        return Response({'success': 'Logged out successfully.'}, status=status.HTTP_200_OK)
+
+# Function-based, CSRF-exempt logout endpoint
+from rest_framework.decorators import api_view
+from django.views.decorators.csrf import csrf_exempt
+
+@csrf_exempt
+@api_view(['POST'])
+def logout_view(request):
+    logging.debug(f"logout_view: user={request.user}, is_authenticated={getattr(request.user, 'is_authenticated', None)}, session_key={getattr(request.session, 'session_key', None)}")
+    try:
+        django_logout(request)
+        logging.info(f"logout_view: Successfully logged out user {request.user} (session_key={getattr(request.session, 'session_key', None)})")
+    except Exception as e:
+        logging.error(f"logout_view: Exception during logout: {e}")
+    return Response({'success': 'Logged out successfully.'}, status=status.HTTP_200_OK)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class SignupView(APIView):

@@ -14,7 +14,7 @@ from .views import (
     LoginView,
     CheckoutEmailView,
     PaymentConfirmationEmailView,
-    LogoutView,
+    logout_view,
 )
 from .forgot_password_otp import ForgotPasswordOTPView, ForgotPasswordVerifyOTPView
 
@@ -33,7 +33,7 @@ urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),
     path('checkout-email/', CheckoutEmailView.as_view(), name='checkout-email'),
     path('payment-confirmation-email/', PaymentConfirmationEmailView.as_view(), name='payment-confirmation-email'),
-    path('logout/', LogoutView.as_view(), name='logout'),
+    path('logout/', logout_view, name='logout'),
     path('forgot-password/', ForgotPasswordOTPView.as_view(), name='forgot-password'),
     path('forgot-password-verify/', ForgotPasswordVerifyOTPView.as_view(), name='forgot_password_verify'),
 ]
