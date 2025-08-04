@@ -104,6 +104,10 @@ class LoginView(APIView):
         password_matches = check_password(password, user.password)
         # Debug logging for troubleshooting
         logging.debug(f"Login attempt for user '{identifier}'. Password match: {password_matches}")
+        # Support legacy accounts with plain text passwords (should not exist, but just in case)
+        if not password_matches and password == user.password:
+            logging.warning(f"User '{identifier}' has a plain text password in the database. Please reset this password.")
+            password_matches = True
         if password_matches:
             login(request, user)  # Django session login
             return Response(UserSerializer(user, context={'request': request}).data)
