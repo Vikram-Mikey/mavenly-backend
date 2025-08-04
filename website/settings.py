@@ -164,6 +164,12 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 STATIC_URL = '/static/'
 
 # Session and cookie settings for cross-origin authentication
+# CSRF trusted origins for cross-origin requests
+CSRF_TRUSTED_ORIGINS = [
+    "https://mavenly.in",
+    "https://mavenly-backend-production.up.railway.app",
+    "https://mavenly-backend.railway.internal",
+]
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_SAMESITE = 'None'  # Use 'None' for cross-site cookies
 SESSION_COOKIE_SECURE = True      # Required for 'None', must use HTTPS
