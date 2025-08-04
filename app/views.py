@@ -205,7 +205,10 @@ Please process the payment/order accordingly.
         )
         return Response({'success': 'Checkout email sent to host.'})
 
+from rest_framework.permissions import AllowAny
+
 class ProgramReviewView(APIView):
+    permission_classes = [AllowAny]
     def get(self, request):
         program = request.GET.get('program')
         if not program:
@@ -484,6 +487,7 @@ Please respond to the enquiry as soon as possible.
         return Response({'success': 'Enquiry email sent to host.'})
 
 class ProgramDevEnquiryEmailView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         name = request.data.get('name')
         email = request.data.get('email')
