@@ -55,27 +55,14 @@ class RemoveProfilePhotoView(APIView):
         user.save()
         return Response({'success': 'Profile photo removed.'})
 
-
-# Function-based, CSRF-exempt logout endpoint
-from rest_framework.decorators import api_view
-from django.views.decorators.csrf import csrf_exempt
-
-@csrf_exempt
-@api_view(['POST', 'GET'])
-def logout_view(request):
-    if request.method == 'GET':
-        # Health check for deployment debugging
-        return Response({'status': 'logout endpoint is live'}, status=200)
-    if request.method != 'POST':
-        logging.warning(f"logout_view: Method {request.method} not allowed")
-        return Response({'error': 'Method not allowed'}, status=404)
-    logging.debug(f"logout_view: user={request.user}, is_authenticated={getattr(request.user, 'is_authenticated', None)}, session_key={getattr(request.session, 'session_key', None)}")
-    try:
-        django_logout(request)
-        logging.info(f"logout_view: Successfully logged out user {request.user} (session_key={getattr(request.session, 'session_key', None)})")
-    except Exception as e:
-        logging.error(f"logout_view: Exception during logout: {e}")
-    return Response({'success': 'Logged out successfully.'}, status=status.HTTP_200_OK)
+@method_decorator(csrf_exempt, name='dispatch')
+class LogoutView(APIView):
+    def post(self, request):
+        try:
+            django_logout(request)
+        except Exception:
+            pass
+        return Response({'success': 'Logged out successfully.'}, status=status.HTTP_200_OK)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class SignupView(APIView):
