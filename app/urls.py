@@ -16,7 +16,6 @@ from .views import (
     CheckoutEmailView,
     PaymentConfirmationEmailView,
     LogoutView,
-    forgot_password_otp,
 )
 
 urlpatterns = [
@@ -33,7 +32,6 @@ urlpatterns = [
     path('signup/', SignupView.as_view(), name='signup'),
     path('login/', LoginView.as_view(), name='login'),
     path('forgot-password/', ForgotPasswordView.as_view(), name='forgot-password'),
-    path('forgot-password-otp/', forgot_password_otp, name='forgot-password-otp'),
     path('checkout-email/', CheckoutEmailView.as_view(), name='checkout-email'),
     path('payment-confirmation-email/', PaymentConfirmationEmailView.as_view(), name='payment-confirmation-email'),
     path('logout/', LogoutView.as_view(), name='logout'),

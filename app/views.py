@@ -1,39 +1,3 @@
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
-
-# Simple OTP password reset endpoint
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def forgot_password_otp(request):
-    identifier = request.data.get('identifier')
-    if not identifier:
-        return Response({'error': 'Username or email is required.'}, status=status.HTTP_400_BAD_REQUEST)
-    # Find user by username or email
-    from .models import User
-    try:
-        user = User.objects.get(username=identifier)
-    except User.DoesNotExist:
-        try:
-            user = User.objects.get(email__iexact=identifier)
-        except User.DoesNotExist:
-            return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
-    email = user.email
-    # Generate OTP
-    otp = str(random.randint(100000, 999999))
-    verification_codes[email] = otp
-    # Send OTP via email
-    try:
-        send_mail(
-            'Mavenly Password Reset OTP',
-            f'Your password reset OTP is: {otp}',
-            settings.DEFAULT_FROM_EMAIL,
-            [email],
-            fail_silently=False,
-        )
-    except Exception as e:
-        logging.exception("Failed to send password reset OTP email")
-        return Response({'error': f'Failed to send OTP: {str(e)}'}, status=500)
-    return Response({'success': 'OTP sent to email.'})
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
@@ -127,34 +91,29 @@ class LoginView(APIView):
         identifier = request.data.get('username', '').strip()
         password = request.data.get('password')
         user = None
-        logging.debug(f"Login attempt: identifier={identifier}")
+        logging.debug(f"Login request data: username={identifier}, password={password}")
         # Try username first
         try:
             user = User.objects.get(username=identifier)
-            logging.debug(f"User found by username: {user}")
+            logging.debug(f"User found by username: id={user.id}, username={user.username}, email={user.email}, hash={user.password}")
         except User.DoesNotExist:
             # Try email next
             try:
                 user = User.objects.get(email__iexact=identifier)
-                logging.debug(f"User found by email: {user}")
+                logging.debug(f"User found by email: id={user.id}, username={user.username}, email={user.email}, hash={user.password}")
             except User.DoesNotExist:
                 logging.warning(f"Login failed: identifier '{identifier}' not found.")
                 return Response({'error': 'Username or email not found.'}, status=status.HTTP_400_BAD_REQUEST)
         # User found, check password
-        # Only allow login if password is hashed
-        if user.password.startswith('pbkdf2_') or user.password.startswith('argon2$') or user.password.startswith('bcrypt$'):
-            password_matches = check_password(password, user.password)
-            logging.debug(f"Password check: entered='{password}', stored_hash='{user.password}', match={password_matches}")
-            if password_matches:
-                logging.info(f"Login successful for user '{identifier}'")
-                login(request, user)  # Django session login
-                return Response(UserSerializer(user, context={'request': request}).data)
-            else:
-                logging.warning(f"Login failed: incorrect password for identifier '{identifier}'")
-                return Response({'error': 'Incorrect password.'}, status=status.HTTP_400_BAD_REQUEST)
+        password_matches = check_password(password, user.password)
+        logging.debug(f"Password verification: entered='{password}', stored_hash='{user.password}', match={password_matches}")
+        if password_matches:
+            logging.info(f"Login successful for user '{identifier}' (id={user.id})")
+            login(request, user)  # Django session login
+            return Response(UserSerializer(user, context={'request': request}).data)
         else:
-            logging.error(f"Login failed: password for user '{identifier}' is not hashed. Force password reset.")
-            return Response({'error': 'Password is not securely stored. Please reset your password.'}, status=status.HTTP_400_BAD_REQUEST)
+            logging.warning(f"Login failed: incorrect password for identifier '{identifier}' (id={user.id})")
+            return Response({'error': 'Incorrect password.'}, status=status.HTTP_400_BAD_REQUEST)
 
 class ForgotPasswordView(APIView):
     def post(self, request):
