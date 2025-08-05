@@ -224,6 +224,9 @@ class ProgramReviewView(APIView):
         data = request.data.copy()
         from datetime import datetime
         data['created_at'] = datetime.utcnow().isoformat()
+        # Accept 'comment' from frontend, set user if authenticated
+        if request.user.is_authenticated:
+            data['user'] = request.user.id
         serializer = ProgramReviewSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
