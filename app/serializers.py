@@ -16,12 +16,19 @@ class UserSerializer(serializers.ModelSerializer):
         return None
 
 class ProgramReviewSerializer(serializers.ModelSerializer):
+
     user_email = serializers.ReadOnlyField(source='user.email')
+    user_name = serializers.SerializerMethodField()
     user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False, allow_null=True)
+
+    def get_user_name(self, obj):
+        if obj.user:
+            return getattr(obj.user, 'name', None) or getattr(obj.user, 'username', None) or obj.user.email
+        return None
 
     class Meta:
         model = ProgramReview
-        fields = ['id', 'user', 'user_email', 'program', 'rating', 'comment', 'created_at', 'updated_at']
+        fields = ['id', 'user', 'user_email', 'user_name', 'program', 'rating', 'comment', 'created_at', 'updated_at']
 
 
 # SignupSerializer for user registration
