@@ -33,6 +33,12 @@ class SignupSerializer(serializers.ModelSerializer):
         fields = ['username', 'email', 'phone', 'password']
 
     def create(self, validated_data):
+        email = validated_data.get('email')
+        username = validated_data.get('username')
+        if User.objects.filter(email=email).exists():
+            raise serializers.ValidationError({'email': 'A user with this email already exists.'})
+        if username and User.objects.filter(username=username).exists():
+            raise serializers.ValidationError({'username': 'A user with this username already exists.'})
         password = validated_data.pop('password')
         user = User(**validated_data)
         user.set_password(password)
