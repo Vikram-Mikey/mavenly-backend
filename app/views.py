@@ -117,8 +117,9 @@ class LoginView(APIView):
         if password_matches:
             login(request, user)  # Django session login
             resp = Response(UserSerializer(user, context={'request': request}).data)
-            # Set user_email cookie for frontend admin detection
+            # Set user_email and user_id cookies for frontend detection
             resp.set_cookie('user_email', user.email, httponly=False, samesite='Lax')
+            resp.set_cookie('user_id', str(user.id), httponly=False, samesite='Lax')
             return resp
         else:
             return Response({'error': 'Incorrect password.'}, status=status.HTTP_400_BAD_REQUEST)
