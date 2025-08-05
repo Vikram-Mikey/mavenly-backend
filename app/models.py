@@ -36,7 +36,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.email
 
 class ProgramReview(models.Model):
-    user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='reviews')
+    user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='reviews', null=True, blank=True)
     program = models.CharField(max_length=255)
     rating = models.PositiveSmallIntegerField()
     comment = models.TextField(blank=True)
