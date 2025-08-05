@@ -173,6 +173,8 @@ CSRF_TRUSTED_ORIGINS = [
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_SAMESITE = 'None'  # Use 'None' for cross-site cookies
 SESSION_COOKIE_SECURE = True      # Required for 'None', must use HTTPS
+SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 # Django REST Framework config (basic)
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
