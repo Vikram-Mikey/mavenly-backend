@@ -19,7 +19,7 @@ class ProgramReviewSerializer(serializers.ModelSerializer):
 
     user_email = serializers.ReadOnlyField(source='user.email')
     user_name = serializers.SerializerMethodField()
-    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False, allow_null=True)
+    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
 
     def get_user_name(self, obj):
         if obj.user:
