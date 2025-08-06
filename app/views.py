@@ -118,8 +118,22 @@ class LoginView(APIView):
             login(request, user)  # Django session login
             resp = Response(UserSerializer(user, context={'request': request}).data)
             # Set user_email and user_id cookies for frontend detection
-            resp.set_cookie('user_email', user.email, httponly=False, samesite='Lax')
-            resp.set_cookie('user_id', str(user.id), httponly=False, samesite='Lax')
+            # Set cookies with domain, path, and secure options for cross-origin visibility
+            cookie_params = {
+                'httponly': False,
+                'samesite': 'Lax',
+                'path': '/',
+            }
+            # If running on production, set domain and secure
+            import os
+            frontend_domain = os.environ.get('FRONTEND_DOMAIN') or None
+            is_secure = os.environ.get('COOKIE_SECURE', 'false').lower() == 'true'
+            if frontend_domain:
+                cookie_params['domain'] = frontend_domain
+            if is_secure:
+                cookie_params['secure'] = True
+            resp.set_cookie('user_email', user.email, **cookie_params)
+            resp.set_cookie('user_id', str(user.id), **cookie_params)
             return resp
         else:
             return Response({'error': 'Incorrect password.'}, status=status.HTTP_400_BAD_REQUEST)
