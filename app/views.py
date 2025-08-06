@@ -118,13 +118,14 @@ class LoginView(APIView):
             login(request, user)  # Django session login
             resp = Response(UserSerializer(user, context={'request': request}).data)
             # Set user_email and user_id cookies for frontend detection
-            # Set cookies with domain, path, and secure options for cross-origin visibility
+            # Set cookies with domain, path, secure, and max_age for persistence
+            from django.conf import settings
             cookie_params = {
                 'httponly': False,
                 'samesite': 'Lax',
                 'path': '/',
+                'max_age': getattr(settings, 'SESSION_COOKIE_AGE', 1209600),
             }
-            # If running on production, set domain and secure
             import os
             frontend_domain = os.environ.get('FRONTEND_DOMAIN') or None
             is_secure = os.environ.get('COOKIE_SECURE', 'false').lower() == 'true'
