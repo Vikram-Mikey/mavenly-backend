@@ -594,6 +594,32 @@ class ProfileView(APIView):
         user = request.user
         if not user.is_authenticated:
             return Response({'error': 'User not authenticated.'}, status=status.HTTP_401_UNAUTHORIZED)
+from rest_framework.parsers import MultiPartParser, FormParser
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+import logging
+
+@method_decorator(csrf_exempt, name='dispatch')
+class UploadProfilePhotoView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+    def post(self, request):
+        user = request.user
+        if not user.is_authenticated:
+            return Response({'error': 'User not authenticated.'}, status=status.HTTP_401_UNAUTHORIZED)
+        photo_file = request.FILES.get('profile_photo')
+        if not photo_file:
+            return Response({'error': 'No photo uploaded.'}, status=status.HTTP_400_BAD_REQUEST)
+        filename = f"profile_{user.id}.jpg"
+        try:
+            path = default_storage.save(filename, ContentFile(photo_file.read()))
+            user.profile_photo = path
+            user.save()
+        except Exception as e:
+            logging.exception("Failed to save profile photo")
+            return Response({'error': 'Failed to save profile photo.'}, status=500)
+        serializer = UserSerializer(user, context={'request': request})
+        return Response(serializer.data)
         serializer = UserSerializer(user, context={'request': request})
         return Response(serializer.data)
 
