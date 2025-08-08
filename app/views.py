@@ -594,6 +594,12 @@ class ProfileView(APIView):
         user = request.user
         if not user.is_authenticated:
             return Response({'error': 'User not authenticated.'}, status=status.HTTP_401_UNAUTHORIZED)
+        # Return basic profile info
+        return Response({
+            'email': getattr(user, 'email', None),
+            'id': getattr(user, 'id', None),
+            'username': getattr(user, 'username', None),
+        })
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
