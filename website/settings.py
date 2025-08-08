@@ -23,7 +23,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
+    'corsheaders',
     'rest_framework',
     'app',
 ]
@@ -128,6 +128,7 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = list(default_headers) + [
     "content-type",
     "x-csrftoken",
+    'authorization',
     "x-user-email",
 ]
 CORS_EXPOSE_HEADERS = ['Set-Cookie']

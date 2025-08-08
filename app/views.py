@@ -591,20 +591,18 @@ This is a freelancing program enquiry from the FreelancingProgramDevSection form
 class ProfileView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request):
-        # Log session cookie for debugging
-        session_cookie = request.COOKIES.get('sessionid', None)
-        logging.info(f"ProfileView: sessionid cookie: {session_cookie}")
         user = request.user
         if not user.is_authenticated:
-            logging.warning("ProfileView: User not authenticated.")
             return Response({'error': 'User not authenticated.'}, status=status.HTTP_401_UNAUTHORIZED)
         # Return basic profile info
-        logging.info(f"ProfileView: Authenticated user: {getattr(user, 'email', None)}")
         return Response({
             'email': getattr(user, 'email', None),
             'id': getattr(user, 'id', None),
             'username': getattr(user, 'username', None),
+            'phone': getattr(user, 'phone', None),
+            'photo_url': getattr(user, 'photo_url', None),
         })
+
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
